@@ -1,0 +1,149 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+checkpoints/
+*.safetensors
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Model weights and data
+*.h5
+*.pkl
+*.pickle
+*.joblib
+models/
+weights/
+pretrained/
+
+# Dataset directories (use specific paths to avoid ignoring Data/ source folder)
+datasets/
+videos/
+audio/
+images/
+dev/
+test/
+train/
+val/
+
+# VoxCeleb2 specific
+voxceleb2/
+vox2_dev_mp4*/
+vox2_test_mp4*/
+combined.tar
+*.tar
+*.tar.gz
+*.zip
+
+# Generated phoneme labels
+phoneme_labels/
+*_phonemes.json
+*_phonemes.txt
+
+# Logs and outputs
+logs/
+*.log
+runs/
+output/
+outputs/
+results/
+
+# Weights & Biases
+wandb/
+
+# Cache
+.cache/
+*.cache
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large files
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+*.flac
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# Verification reports
+verification_report.json
+ctc_loss_inputs.csv
