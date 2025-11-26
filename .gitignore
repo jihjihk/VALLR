@@ -147,3 +147,7 @@ dmypy.json
 # Verification reports
 verification_report.json
 ctc_loss_inputs.csv
+
+
+*.ipynb
+*.tex

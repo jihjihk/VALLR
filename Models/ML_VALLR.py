@@ -197,7 +197,9 @@ class VALLR(nn.Module):
         )
 
         # 2) Temporal downsampling over token axis N (treat tokens as a "time" sequence)
-        #    Safer strides (avoid collapsing very short sequences; fine for N=1568).
+        #    Less aggressive downsampling to maintain longer output sequences for CTC.
+        #    With 64 frames: 64 temporal frames -> 32 tokens (tubelet) -> 32*14*14=6272 total tokens
+        #    Target: downsample by ~50-60x to get ~100-120 output tokens
         self.downsampling = nn.Sequential(
             nn.Conv1d(in_channels=feature_size, out_channels=adapter_dim, kernel_size=5, stride=2, padding=2),
             nn.BatchNorm1d(adapter_dim, eps=1e-5, momentum=0.1, affine=True),
@@ -210,11 +212,12 @@ class VALLR(nn.Module):
             nn.Conv1d(in_channels=adapter_dim, out_channels=adapter_dim, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm1d(adapter_dim, eps=1e-5, momentum=0.1, affine=True),
             nn.ReLU(),
-            
-            nn.Conv1d(in_channels=adapter_dim, out_channels=adapter_dim, kernel_size=3, stride=3, padding=1),
-            nn.BatchNorm1d(adapter_dim, eps=1e-5, momentum=0.1, affine=True),
-            nn.ReLU(),
-            nn.AvgPool1d(kernel_size=5, stride=6)  # Adjust kernel size and stride to control final length
+
+            # Removed aggressive stride=3 and stride=6 layers
+            # Total downsampling: 2*2*2 = 8x (was 144x before)
+            # With 64 frames: 6272/8 = 784 tokens
+            # With adaptive pooling below, we can control final length more precisely
+            nn.AdaptiveAvgPool1d(output_size=120)  # Fixed output length suitable for CTC
         )
 
         # 3) Adapter to the CTC hidden size

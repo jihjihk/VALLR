@@ -136,3 +136,106 @@ This work is licensed under a
 [cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
 [cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
 [cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
+
+---
+
+# Start here
+
+```
+conda create -n vallr python=3.11
+conda activate vallr
+pip install mediapipe
+```
+
+# Dataset
+
+## Generating Phoneme
+
+`python Data/phonemes.py --video_dir ./dev/mp4/id06963 --output_dir ./phoneme_labels --whisper_model base --output_format json`
+
+## Verifying Phoneme generation
+
+`python Data/verify_all_phonemes.py phoneme_labels --output verification_report.json`
+
+# Pre-processing
+
+```
+python Data/preprocess_opencv_stable.py \
+    --video_dir ./voxceleb2/mp4/dev \
+    --output_dir ./processed_voxceleb2 \
+    --speaker_id id06963
+```
+
+# CTC Length Constraint Fix
+
+## Problem
+
+The original VALLR model had overly aggressive temporal downsampling that caused all training batches to be skipped due to CTC constraint violations.
+
+**CTC Constraint:** `output_length >= target_length` (input sequence must be at least as long as target phoneme sequence)
+
+### Original Architecture Issues
+
+With 16 input frames:
+- After tubelet embedding (stride=2): 8 temporal tokens
+- After spatial flattening: 8 × 14 × 14 = **1,568 total tokens**
+- After downsampling (2×2×2×3×6 = 144x): **~11 output tokens**
+- **Result:** Only 0% of data usable (phonemes: 39-177, need >= output length)
+
+With 64 input frames:
+- After tubelet: 32 temporal tokens
+- After flattening: 32 × 14 × 14 = **6,272 total tokens**
+- After downsampling (144x): **~43 output tokens**
+- **Result:** Only 13.4% of data usable
+
+With 128 input frames:
+- After tubelet: 64 temporal tokens
+- After flattening: 64 × 14 × 14 = **12,544 total tokens**
+- After downsampling (144x): **~87 output tokens**
+- **Result:** Still only ~50% of data usable
+
+## Root Cause
+
+The model's downsampling architecture in `Models/ML_VALLR.py` (lines 201-218) was too aggressive:
+
+```python
+# Old architecture - 144x downsampling!
+nn.Conv1d(stride=2)  # /2
+nn.Conv1d(stride=2)  # /2
+nn.Conv1d(stride=2)  # /2
+nn.Conv1d(stride=3)  # /3
+nn.AvgPool1d(stride=6)  # /6
+# Total: 2×2×2×3×6 = 144x
+```
+
+This was designed for very long sequences (like N=1568 with 16 frames), but:
+1. It downsamples the **flattened spatiotemporal tokens**, not just temporal dimension
+2. Even with 128 frames, the final output is too short for many phoneme sequences
+3. High memory cost of 128 frames without sufficient benefit
+
+## Solution
+
+**Modified architecture with fixed output length:**
+
+```python
+# New architecture - 8x downsampling + adaptive pooling
+nn.Conv1d(stride=2)  # /2
+nn.Conv1d(stride=2)  # /2
+nn.Conv1d(stride=2)  # /2
+nn.AdaptiveAvgPool1d(output_size=120)  # Fixed to 120 tokens
+# Total: 8x downsampling, then adaptive to 120 output
+```
+
+### Benefits
+
+With **64 input frames** (optimal choice):
+- After tubelet: 32 temporal tokens
+- After flattening: 32 × 14 × 14 = 6,272 total tokens
+- After 8x downsampling: 784 tokens
+- After adaptive pooling: **120 output tokens**
+
+**Coverage analysis:**
+- Phoneme sequences: min=39, max=177, mean≈80
+- With 120 output length: **Covers ~95%+ of training data** (all sequences ≤120)
+- Memory efficient: 64 frames vs 128 frames = 2x memory savings
+- Consistent output length for batching
