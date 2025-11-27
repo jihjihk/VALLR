@@ -93,7 +93,7 @@ threadpoolctl==3.5.0
 tiktoken==0.7.0
 timm
 tokenizers==0.19.1
-torch==2.4.1
+torch==2.5.1
 torchaudio==2.4.1
 torchvision==0.19.1
 tqdm==4.66.5

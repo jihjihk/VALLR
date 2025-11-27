@@ -216,8 +216,8 @@ class VALLR(nn.Module):
             # Removed aggressive stride=3 and stride=6 layers
             # Total downsampling: 2*2*2 = 8x (was 144x before)
             # With 64 frames: 6272/8 = 784 tokens
-            # With adaptive pooling below, we can control final length more precisely
-            nn.AdaptiveAvgPool1d(output_size=120)  # Fixed output length suitable for CTC
+            # Increased output to 200 to cover mean phoneme length (~98-101)
+            nn.AdaptiveAvgPool1d(output_size=200)  # Covers ~75-80% of data (sequences ≤200)
         )
 
         # 3) Adapter to the CTC hidden size
